@@ -91,7 +91,7 @@ class Apple(GameObject):
     When the snake eats an apple, its length increases by one segment.
     """
 
-    def __init__(self, occupied_positions):
+    def __init__(self, occupied_positions=None):
         super().__init__()
         self.body_color = APPLE_COLOR
         self.randomize_position(occupied_positions)
@@ -117,7 +117,7 @@ class Stone(GameObject):
     Colliding with the stone may result in the snake's game over.
     """
 
-    def __init__(self, occupied_positions):
+    def __init__(self, occupied_positions=None):
         super().__init__()
         self.body_color = STONE_COLOR
         self.randomize_position(occupied_positions)
