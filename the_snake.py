@@ -26,9 +26,6 @@ APPLE_COLOR = (255, 0, 0)
 # Snake color:
 SNAKE_COLOR = (0, 255, 0)
 
-# Stone color:
-# STONE_COLOR = (128, 128, 128)
-
 # Snake speed:
 SPEED = 3
 
@@ -94,31 +91,6 @@ class Apple(GameObject):
         y = randint(0, max_y) * GRID_SIZE
 
         self.position = x, y
-
-# class Stone(GameObject):
-#     """
-#     Extends the GameObject class and represents a stone
-#     that the snake may collide with.
-#     The stone has a fixed position and does not move.
-#     Colliding with the stone may result in the snake's game over.
-#     """
-#
-#     def __init__(self, occupied_positions=None):
-#         super().__init__()
-#         self.body_color = STONE_COLOR
-#         self.randomize_position(occupied_positions)
-#
-#     def draw(self):
-#         """
-#         This method creates a rectangular shape
-#         using the object's current position and size.
-#
-#         The method uses `pygame.draw.rect` to draw both
-#         the body and the border of the object.
-#         """
-#         rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-#         pygame.draw.rect(screen, self.body_color, rect)
-#         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Snake(GameObject):
@@ -278,23 +250,20 @@ def main():
 
     snake = Snake()
     apple = Apple()
-    # stone = Stone([snake.positions, apple.position])
 
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
 
         apple.draw()
-        # stone.draw()
         snake.draw()
         snake.move()
 
         if apple.position == snake.get_head_position():
             snake.length += 1
             snake.positions.append(snake.positions[-1])
-            apple.randomize_position([snake.positions])
+            apple.randomize_position()
 
-        # if snake.is_collision() or stone.position == snake.get_head_position():
         if snake.is_collision():
             snake.reset()
 
