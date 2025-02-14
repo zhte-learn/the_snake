@@ -1,6 +1,6 @@
 from random import randint
 
-import pygame
+import pygame as pg
 
 # Constants for field and grid sizes:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -30,13 +30,13 @@ SNAKE_COLOR = (0, 255, 0)
 SPEED = 3
 
 # Setting up the game window:
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
 # Title for the game:
-pygame.display.set_caption('Snake')
+pg.display.set_caption('Snake')
 
 # Set the time:
-clock = pygame.time.Clock()
+clock = pg.time.Clock()
 
 
 class GameObject:
@@ -45,17 +45,19 @@ class GameObject:
     Represents a generic game object with position and coby color.
     """
 
-    def __init__(self):
+    def __init__(self, color=None):
         self.position = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
-        self.body_color = None
+        self.body_color = color if color else None
 
     def draw(self):
         """
         The method is rendering the object on the game screen.
         This method is currently empty in the base class
         and should be implemented in subclasses.
+        Raises:
+            NotImplementedError (if this method is not implemented)
         """
-        pass
+        raise NotImplementedError("Subclasses must implement this method")
 
 
 class Apple(GameObject):
@@ -65,52 +67,56 @@ class Apple(GameObject):
     When the snake eats an apple, its length increases by one segment.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.body_color = APPLE_COLOR
-        self.randomize_position()
+    def __init__(self, occupied_positions=None):
+        if occupied_positions is None:
+            occupied_positions = []
+        super().__init__(APPLE_COLOR)
+        self.randomize_position(occupied_positions)
 
     def draw(self):
         """
         This method creates a rectangular shape
         using the object's current position and size.
 
-        The method uses `pygame.draw.rect` to draw both
+        The method uses `pg.draw.rect` to draw both
         the body and the border of the object.
         """
-        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+        rect = pg.Rect(self.position, (GRID_SIZE, GRID_SIZE))
+        pg.draw.rect(screen, self.body_color, rect)
+        pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
-    def randomize_position(self):
-        """Randomly assigns a new position to the object"""
+    def randomize_position(self, occupied_positions):
+        """
+        Randomly assigns a new position to the object
+        Args:
+            occupied_positions (list): List of positions
+            that are already occupied.
+        """
         max_x = GRID_WIDTH - 1
         max_y = GRID_HEIGHT - 1
 
-        x = randint(0, max_x) * GRID_SIZE
-        y = randint(0, max_y) * GRID_SIZE
-
-        self.position = x, y
+        while True:
+            self.position = (randint(0, max_x) * GRID_SIZE,
+                             randint(0, max_y) * GRID_SIZE)
+            if self.position not in occupied_positions:
+                break
 
 
 class Snake(GameObject):
     """
     Extends the GameObject class and represents a snake.
     The snake can move in different directions,
-    grow when eating apples, and check for self-collisions.
+    grow when eating apples.
     It has a dynamic position and length,
     and its movement can wrap around the screen edges.
     Colliding with the snake's own body will result in a game over.
     """
 
     def __init__(self):
-        super().__init__()
-        self.body_color = SNAKE_COLOR
-        self.length = 1
-        self.direction = RIGHT
-        self.next_direction = None
-        self.positions = [self.position]
+        super().__init__(SNAKE_COLOR)
+        self.positions = []
         self.last = None
+        self.reset()
 
     def draw(self):
         """
@@ -118,46 +124,22 @@ class Snake(GameObject):
         each one as a rectangle.
         Erases the last segment of the snake's body when it moves.
         """
-        for position in self.positions[:-1]:
-            rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
-            pygame.draw.rect(screen, self.body_color, rect)
-            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
-
         # Draw snake's head:
-        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, head_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
+        head_rect = pg.Rect(self.get_head_position(), (GRID_SIZE, GRID_SIZE))
+        pg.draw.rect(screen, self.body_color, head_rect)
+        pg.draw.rect(screen, BORDER_COLOR, head_rect, 1)
 
         # Erase snake's tail:
         if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+            last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
+            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
-    def update_direction(self):
+    def update_direction(self, next_direction):
         """
         Updates the snake's direction to the next direction if set.
         Resets the next direction after updating.
         """
-        if self.next_direction:
-            self.direction = self.next_direction
-            self.next_direction = None
-
-    def handle_wrapping(self, step):
-        """
-        Wraps the position around the screen boundaries.
-        If the snake moves off-screen, it reappears on the opposite edge.
-        """
-        x, y = step
-        if x >= SCREEN_WIDTH:
-            x = 0
-        elif x < 0:
-            x = SCREEN_WIDTH
-
-        if y >= SCREEN_HEIGHT:
-            y = 0
-        elif y < 0:
-            y = SCREEN_HEIGHT
-        return x, y
+        self.direction = next_direction
 
     def move(self):
         """
@@ -165,13 +147,11 @@ class Snake(GameObject):
         and handling screen wrapping.
         The snake's tail is removed if its length exceeds the current size.
         """
-        self.update_direction()
-
-        start = self.get_head_position()
-        direction = (self.direction[0] * GRID_SIZE,
-                     self.direction[1] * GRID_SIZE)
-        step = tuple(a + b for a, b in zip(start, direction))
-        self.positions = [self.handle_wrapping(step)] + self.positions
+        dx, dy = self.direction
+        head_x, head_y = self.get_head_position()
+        new_x = (head_x + dx * GRID_SIZE) % SCREEN_WIDTH
+        new_y = (head_y + dy * GRID_SIZE) % SCREEN_HEIGHT
+        self.positions.insert(0, (new_x, new_y))
 
         if len(self.positions) > self.length:
             self.last = self.positions.pop()
@@ -186,30 +166,11 @@ class Snake(GameObject):
         and setting its length, direction, and position back
         to the starting point.
         """
-        for position in self.positions:
-            rect = pygame.Rect(position, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, rect)
-
-        if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
-
         self.length = 1
         self.direction = RIGHT
         self.next_direction = None
         self.positions = [self.position]
         self.last = None
-
-    def is_collision(self):
-        """
-        Checks if the snake's head has collided with any part of its body.
-        Returns:
-            bool: True if a collision is detected, otherwise False.
-        """
-        for segment in self.positions[2:]:
-            if segment == self.get_head_position():
-                return True
-        return False
 
 
 def handle_keys(game_object):
@@ -221,19 +182,26 @@ def handle_keys(game_object):
     Args:
         game_object (GameObject)
     """
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            pg.quit()
             raise SystemExit
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and game_object.direction != DOWN:
-                game_object.next_direction = UP
-            elif event.key == pygame.K_DOWN and game_object.direction != UP:
-                game_object.next_direction = DOWN
-            elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
-                game_object.next_direction = LEFT
-            elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
-                game_object.next_direction = RIGHT
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_UP and game_object.direction != DOWN:
+                # game_object.next_direction = UP
+                game_object.update_direction(UP)
+            elif event.key == pg.K_DOWN and game_object.direction != UP:
+                # game_object.next_direction = DOWN
+                game_object.update_direction(DOWN)
+            elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
+                # game_object.next_direction = LEFT
+                game_object.update_direction(LEFT)
+            elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
+                # game_object.next_direction = RIGHT
+                game_object.update_direction(RIGHT)
+            elif event.key == pg.K_ESCAPE:
+                pg.quit()
+                raise SystemExit
 
 
 def main():
@@ -246,28 +214,27 @@ def main():
 
     The game ends when the snake collides with itself or the stone.
     """
-    pygame.init()
+    pg.init()
 
     snake = Snake()
-    apple = Apple()
+    apple = Apple(snake.positions)
 
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
 
+        if apple.position == snake.get_head_position():
+            snake.length += 1
+            apple.randomize_position(snake.positions)
+        elif snake.get_head_position() in snake.positions[2:]:
+            snake.reset()
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            apple.randomize_position(snake.positions)
+
         apple.draw()
         snake.draw()
         snake.move()
-
-        if apple.position == snake.get_head_position():
-            snake.length += 1
-            snake.positions.append(snake.positions[-1])
-            apple.randomize_position()
-
-        if snake.is_collision():
-            snake.reset()
-
-        pygame.display.update()
+        pg.display.update()
 
 
 if __name__ == '__main__':
