@@ -57,7 +57,7 @@ class GameObject:
         Raises:
             NotImplementedError (if this method is not implemented)
         """
-        raise NotImplementedError("Subclasses must implement this method")
+        raise NotImplementedError('Subclasses must implement this method')
 
 
 class Apple(GameObject):
@@ -188,16 +188,12 @@ def handle_keys(game_object):
             raise SystemExit
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_UP and game_object.direction != DOWN:
-                # game_object.next_direction = UP
                 game_object.update_direction(UP)
             elif event.key == pg.K_DOWN and game_object.direction != UP:
-                # game_object.next_direction = DOWN
                 game_object.update_direction(DOWN)
             elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
-                # game_object.next_direction = LEFT
                 game_object.update_direction(LEFT)
             elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
-                # game_object.next_direction = RIGHT
                 game_object.update_direction(RIGHT)
             elif event.key == pg.K_ESCAPE:
                 pg.quit()
