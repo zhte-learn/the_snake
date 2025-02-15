@@ -75,8 +75,7 @@ class Apple(GameObject):
 
     def draw(self):
         """
-        This method creates a rectangular shape
-        using the object's current position and size.
+        This method creates a rectangular shape.
 
         The method uses `pg.draw.rect` to draw both
         the body and the border of the object.
@@ -87,7 +86,7 @@ class Apple(GameObject):
 
     def randomize_position(self, occupied_positions):
         """
-        Randomly assigns a new position to the object
+        Randomly assigns a new position to the object.
         Args:
             occupied_positions (list): List of positions
             that are already occupied.
@@ -116,8 +115,7 @@ class Snake(GameObject):
 
     def draw(self):
         """
-        Iterates through the segments of the snake's body and draws
-        each one as a rectangle.
+        Iterates through the segments of the snake.
         Erases the last segment of the snake's body when it moves.
         """
         # Draw snake's head:
@@ -139,8 +137,7 @@ class Snake(GameObject):
 
     def move(self):
         """
-        Moves the snake by updating its head position
-        and handling screen wrapping.
+        Moves the snake.
         The snake's tail is removed if its length exceeds the current size.
         """
         direction_x, direction_y = self.direction
@@ -157,11 +154,7 @@ class Snake(GameObject):
         return self.positions[0]
 
     def reset(self):
-        """
-        Resets the snake to its initial state, clearing its previous position
-        and setting its length, direction, and position back
-        to the starting point.
-        """
+        """Resets the snake to its initial state."""
         self.length = 1
         self.direction = random.choice([UP, DOWN, LEFT, RIGHT])
         self.next_direction = None
@@ -171,10 +164,9 @@ class Snake(GameObject):
 
 def handle_keys(game_object):
     """
-    Listens for key events and updates the direction of the given game object
-    based on user input. The direction is only updated if the new
+    Listens for key events and updates the direction.
+    The direction is only updated if the new
     direction is not directly opposite to the current direction.
-
     Args:
         game_object (GameObject)
     """
@@ -203,7 +195,6 @@ def main():
     The loop handles user input, updates game objects,
     checks for collisions, and redraws the screen.
     The game runs until it is closed by the user.
-
     The game ends when the snake collides with itself or the stone.
     """
     pg.init()
