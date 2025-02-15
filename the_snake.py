@@ -1,3 +1,4 @@
+import random
 from random import randint
 
 import pygame as pg
@@ -57,7 +58,7 @@ class GameObject:
         Raises:
             NotImplementedError (if this method is not implemented)
         """
-        raise NotImplementedError('Subclasses must implement this method')
+        raise NotImplementedError(f'Subclasses of {type(self).__name__} must implement this method')
 
 
 class Apple(GameObject):
@@ -68,10 +69,8 @@ class Apple(GameObject):
     """
 
     def __init__(self, occupied_positions=None):
-        if occupied_positions is None:
-            occupied_positions = []
         super().__init__(APPLE_COLOR)
-        self.randomize_position(occupied_positions)
+        self.randomize_position(occupied_positions or [])
 
     def draw(self):
         """
@@ -81,6 +80,7 @@ class Apple(GameObject):
         The method uses `pg.draw.rect` to draw both
         the body and the border of the object.
         """
+
         rect = pg.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
@@ -92,12 +92,9 @@ class Apple(GameObject):
             occupied_positions (list): List of positions
             that are already occupied.
         """
-        max_x = GRID_WIDTH - 1
-        max_y = GRID_HEIGHT - 1
-
         while True:
-            self.position = (randint(0, max_x) * GRID_SIZE,
-                             randint(0, max_y) * GRID_SIZE)
+            self.position = (randint(0, GRID_WIDTH - 1) * GRID_SIZE,
+                             randint(0, GRID_HEIGHT - 1) * GRID_SIZE)
             if self.position not in occupied_positions:
                 break
 
@@ -114,9 +111,8 @@ class Snake(GameObject):
 
     def __init__(self):
         super().__init__(SNAKE_COLOR)
-        self.positions = []
-        self.last = None
         self.reset()
+        self.direction = RIGHT
 
     def draw(self):
         """
@@ -147,11 +143,11 @@ class Snake(GameObject):
         and handling screen wrapping.
         The snake's tail is removed if its length exceeds the current size.
         """
-        dx, dy = self.direction
+        direction_x, direction_y = self.direction
         head_x, head_y = self.get_head_position()
-        new_x = (head_x + dx * GRID_SIZE) % SCREEN_WIDTH
-        new_y = (head_y + dy * GRID_SIZE) % SCREEN_HEIGHT
-        self.positions.insert(0, (new_x, new_y))
+        self.position = ((head_x + direction_x * GRID_SIZE) % SCREEN_WIDTH,
+                         (head_y + direction_y * GRID_SIZE) % SCREEN_HEIGHT)
+        self.positions.insert(0, self.position)
 
         if len(self.positions) > self.length:
             self.last = self.positions.pop()
@@ -167,7 +163,7 @@ class Snake(GameObject):
         to the starting point.
         """
         self.length = 1
-        self.direction = RIGHT
+        self.direction = random.choice([UP, DOWN, LEFT, RIGHT])
         self.next_direction = None
         self.positions = [self.position]
         self.last = None
@@ -219,17 +215,19 @@ def main():
         clock.tick(SPEED)
         handle_keys(snake)
 
+        snake.move()
+
         if apple.position == snake.get_head_position():
             snake.length += 1
             apple.randomize_position(snake.positions)
-        elif snake.get_head_position() in snake.positions[2:]:
+        elif snake.get_head_position() in snake.positions[1:]:
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
             apple.randomize_position(snake.positions)
 
         apple.draw()
         snake.draw()
-        snake.move()
+
         pg.display.update()
 
 
