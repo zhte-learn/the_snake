@@ -58,7 +58,8 @@ class GameObject:
         Raises:
             NotImplementedError (if this method is not implemented)
         """
-        raise NotImplementedError(f'Subclasses of {type(self).__name__} must implement this method')
+        raise NotImplementedError(
+            f'Subclasses of {type(self).__name__} must implement this method')
 
 
 class Apple(GameObject):
@@ -80,7 +81,6 @@ class Apple(GameObject):
         The method uses `pg.draw.rect` to draw both
         the body and the border of the object.
         """
-
         rect = pg.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
